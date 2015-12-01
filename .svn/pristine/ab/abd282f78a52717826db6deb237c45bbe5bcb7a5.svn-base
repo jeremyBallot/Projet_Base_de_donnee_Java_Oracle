@@ -1,0 +1,7 @@
+create or replace type body test_type as
+  instantiable final member function lolo(num in integer) return integer is
+  lo integer;
+  begin
+  return num;
+  END lolo;
+END;

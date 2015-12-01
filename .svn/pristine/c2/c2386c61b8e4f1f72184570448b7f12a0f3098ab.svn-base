@@ -1,0 +1,5 @@
+--DELETE THE (SELECT p.Medias FROM MONUMENT p WHERE p.id_monument=0) ph WHERE ph.media=(select ref(i) from audio i where i.id_media=1);
+--select * from audio;
+
+select seq_media.nextval from dual;
+ 

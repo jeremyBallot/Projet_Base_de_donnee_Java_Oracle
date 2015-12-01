@@ -1,0 +1,33 @@
+package Objets;
+
+import java.sql.Date;
+import oracle.sql.REF;
+
+/**
+ *
+ * @author Ferhat
+ */
+public abstract class Media {
+    protected int idMedia;
+    protected String nom;
+    protected String legende;
+    protected Date DateAjout;
+    protected REF Mon;
+    protected String monument;
+    
+    
+    public Media(){
+        this.idMedia = 0;
+        this.nom = "Non Renseigné";
+        this.legende = "Non Renseigné";
+        this.DateAjout = new java.sql.Date(new java.util.Date().getTime());
+        this.monument = "Non Renseigné";
+    }
+    public Media(int id, String nom, String legende,String monu){
+        this.idMedia = id;
+        this.nom = nom;
+        this.legende = legende;
+        this.DateAjout = new java.sql.Date(new java.util.Date().getTime());
+        this.monument = monu;
+    }
+}

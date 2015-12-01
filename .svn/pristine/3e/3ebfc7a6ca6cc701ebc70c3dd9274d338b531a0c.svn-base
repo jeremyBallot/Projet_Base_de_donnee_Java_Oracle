@@ -1,0 +1,80 @@
+package Objets;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import oracle.sql.REF;
+
+/**
+ *
+ * @author Ferhat
+ */
+public abstract class Media {
+    protected int idMedia;
+    protected String nom;
+    protected String legende;
+    protected Date DateAjout;
+    protected REF Mon;
+    protected String monument;
+    
+    
+    public Media(){
+        this.idMedia = 0;
+        this.nom = "Non Renseigné";
+        this.legende = "Non Renseigné";
+        this.DateAjout = new java.sql.Date(new java.util.Date().getTime());
+        this.monument = "Non Renseigné";
+    }
+    public Media(int id, String nom, String legende,String monu){
+        this.idMedia = id;
+        this.nom = nom;
+        this.legende = legende;
+        this.DateAjout = new java.sql.Date(new java.util.Date().getTime());
+        this.monument = monu;
+    }
+    
+    public String get_nom(){
+        return this.nom;
+    }
+    public void set_nom(String in){
+        this.nom=in;
+    }
+    
+    public void set_date(java.sql.Date in){
+        this.DateAjout=in;
+    }
+    
+    public void set_id(int in){
+        this.idMedia=in;
+    }
+   
+    public void set_legende(String in){
+        this.legende=in;
+    }
+    
+    public void set_mon_ref(REF ref){
+        this.Mon=ref;
+        try {
+            this.monument=ref.getValue().toString();
+        } catch (SQLException ex) {
+            Logger.getLogger(Photo.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
+    public void set_date(String in){
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-mm-dd hh:mm:ss");
+        try {
+            this.DateAjout = new java.sql.Date(sdf.parse(in).getTime());
+        } catch (ParseException ex) {
+            Logger.getLogger(Photo.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
+    public int get_id(){
+        return this.idMedia;
+    }
+    
+}

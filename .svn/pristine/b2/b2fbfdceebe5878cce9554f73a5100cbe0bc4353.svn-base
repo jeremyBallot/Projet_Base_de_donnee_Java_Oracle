@@ -1,0 +1,208 @@
+package Objets;
+
+import java.awt.Image;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.sql.PreparedStatement;
+import java.sql.SQLData;
+import java.sql.SQLException;
+import java.sql.SQLInput;
+import java.sql.SQLOutput;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.imageio.ImageIO;
+import oracle.jdbc.OracleResultSet;
+import oracle.jdbc.OracleStatement;
+import oracle.sql.BLOB;
+import oracle.sql.REF;
+import oracle.sql.STRUCT;
+import static projet_test.Projet_test.getBlobFromStream;
+
+/**
+ *
+ * @author Ferhat
+ */
+public class Photo extends Media implements SQLData{
+    private Image img;
+    private STRUCT StillImage;
+    private BLOB lob;
+    private File file;
+    private InputStream input;
+    private String type;
+    private int id_monument;
+    
+    public Photo(){
+        super();
+        this.img = null;
+        this.type="IMAGE";
+        this.id_monument=-1;
+    }
+    
+    public Photo(int id, String nom, String legende,String monument,File file) throws IOException{
+        super(id,nom,legende,monument);
+        this.file=file;
+        this.type="IMAGE";
+        this.id_monument=-1;
+    }
+    public Photo(int id, String nom, String legende,String monument,BLOB file) throws IOException{
+        super(id,nom,legende,monument);
+        this.lob=file;
+        this.type="IMAGE";
+    }
+    
+    public Image get_image(){
+        return img;
+    }
+    
+    public void set_image(File img){
+        try {
+            this.img = ImageIO.read(img);
+        } catch (IOException ex) {
+            Logger.getLogger(Photo.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    public void set_monument(int in){
+        this.id_monument=in;
+    }
+    
+    public void set_blob(BLOB lob){
+         if(lob != null){
+              this.lob=lob;
+             try {
+                 this.img=ImageIO.read(lob.getBinaryStream(1L));
+             } catch (SQLException | IOException ex) {
+                 Logger.getLogger(Photo.class.getName()).log(Level.SEVERE, null, ex);
+             }
+         }
+     }
+    
+    @Override
+    public String getSQLTypeName(){
+        return "IMAGE_TYPE";
+    }
+    
+    @Override
+    public void readSQL(SQLInput stream,String typeName) throws SQLException{
+        this.idMedia = stream.readInt();
+        this.nom = stream.readString();
+        this.DateAjout = stream.readDate();
+        this.legende = stream.readString();
+        this.Mon = (REF) stream.readRef();
+        this.type=stream.readString();
+    }
+    
+    @Override
+    public void writeSQL(SQLOutput stream) throws SQLException{
+       stream.writeInt(this.idMedia);
+       stream.writeString(this.nom);
+       stream.writeDate(this.DateAjout);
+       stream.writeString(this.legende);
+       stream.writeRef(null);
+       stream.writeString(type);
+    }
+    
+    public void load() throws SQLException{
+        
+        String query = "SELECT value(t) FROM image t";
+        OracleStatement st = (OracleStatement) DB.getInstance().getstatement();
+        OracleResultSet rs = (OracleResultSet) st.executeQuery(query);
+        this.StillImage = null;
+        while(rs.next()){
+            this.idMedia = (int)rs.getInt(1);
+            this.nom = (String) rs.getString(2);
+            this.DateAjout = rs.getDate(3);
+            this.legende= rs.getString(4);
+            this.Mon = (REF) rs.getREF(5);
+            this.StillImage = (STRUCT) rs.getSTRUCT(6);
+        }
+        if(input == null)
+            System.out.println("NULL");
+        //System.out.println(this.lob.length());
+        //this.lob = (BLOB) ((STRUCT) stillimage.getAttributes()[0]).getAttributes()[0];
+        System.out.println("ok");
+    }
+    
+    public void save() throws FileNotFoundException, SQLException, ClassNotFoundException, IOException{
+        
+        PreparedStatement ps = DB.getInstance().setPreparedStatement("INSERT INTO IMAGE VALUES(?)");
+        ps.setObject(1, this);
+        DB.getInstance().executePreparedStatement(ps);
+        DB.getInstance().commit();
+        /* Insertion de l'image */
+        InputStream stream = new FileInputStream(this.file);
+        this.lob = getBlobFromStream(stream);
+        if(this.lob.length()>0){ /*Si l'image est bien chargée on insert*/
+            ps = DB.getInstance().setPreparedStatement("UPDATE IMAGE I set I.image = ORDSYS.SI_STILLIMAGE(?) where I.id_media = ?");
+            ps.setBlob(1, this.lob);
+            ps.setInt(2, idMedia);
+            DB.getInstance().executePreparedStatement(ps);
+        }
+        else{/*Sinon on insert Rien*/
+            ps = DB.getInstance().setPreparedStatement("UPDATE IMAGE I set I.image = ORDSYS.SI_STILLIMAGE() where I.id_media = ?");
+            ps.setInt(1, idMedia);
+            DB.getInstance().executePreparedStatement(ps);
+        }
+        if(id_monument != -1){      
+        /* Mettre à jour les references */
+        PreparedStatement pu = DB.getInstance().setPreparedStatement("UPDATE IMAGE M SET MONUMENT = (SELECT REF(R) FROM MONUMENT R WHERE R.M.id_monument=?) WHERE M.ID_MEDIA = ? ");
+        pu.setInt(1, this.id_monument);
+        pu.setInt(2, this.idMedia);
+        DB.getInstance().executePreparedStatement(pu);
+        
+        /*Ajouter le média dans la Collection de Monument*/
+        pu=DB.getInstance().setPreparedStatement("INSERT INTO THE (SELECT M.MEDIAS FROM MONUMENT M WHERE M.id_monument = ?) SELECT REF(I) FROM IMAGE I WHERE I.ID_MEDIA = ?");
+        pu.setInt(1,this.id_monument);
+        pu.setInt(2, this.idMedia);
+        DB.getInstance().executePreparedStatement(pu);
+        DB.getInstance().commit();
+        }
+    }
+    
+    public void delete() throws SQLException{
+        
+        PreparedStatement ps = DB.getInstance().setPreparedStatement("DELETE IMAGE where id_media=?");
+        ps.setInt(1, this.idMedia);
+        DB.getInstance().executePreparedStatement(ps);
+        DB.getInstance().commit();
+        
+        ps=DB.getInstance().setPreparedStatement("");
+        
+        
+    }
+    
+    
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* PreparedStatement ps = DB.getInstance().setPreparedStatement("INSERT INTO imgst VALUES(?,?,ORDSYS.SI_STILLIMAGE(?))");
+        ps.setInt(1, 2);
+        ps.setString(2, "lol");
+        ps.setBlob(3, lob);
+        System.out.println(lob.toString()+" "+lob.length()+"--"+imgdata.length);
+        DB.getInstance().executePreparedStatement(ps);
+        DB.getInstance().commit();*/

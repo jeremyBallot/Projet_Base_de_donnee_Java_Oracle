@@ -1,0 +1,4 @@
+--DELETE THE (SELECT p.Medias FROM MONUMENT p WHERE p.id_monument=0) ph WHERE ph.media=(select ref(i) from audio i where i.id_media=1);
+--select * from audio;
+select * from monument where theme=(select ref(t) from theme t where t.theme='theme');
+ 
